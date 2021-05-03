@@ -52,3 +52,44 @@ def removeUser(id,master,userlock):
                 master.user_list.remove(element)
     finally:
         userlock.release()
+
+
+
+#Validations!
+
+def checkAddUserDataType(idinput, xinput, yinput):
+    returnFlag = True
+    if not (idinput.get().isnumeric()):
+        returnFlag = False
+    if not (xinput.get().isnumeric()):
+        returnFlag = False
+    if not (yinput.get().isnumeric()):
+        returnFlag = False
+    return returnFlag
+
+
+def checkAddUserUnique(idinput, master, userlock):
+    userlock.acquire()
+    try:
+        returnFlag = True
+        for element in master.user_list:
+            if (int(idinput.get()) == element.id):
+                returnFlag = False
+    finally:
+        userlock.release()
+        return returnFlag
+
+
+def checkAddUserBoundaries(xinput, yinput, master, masterlock):
+    returnFlag = True
+    masterlock.acquire()
+    try:
+        canvasx = master.canvas[0]
+        canvasy = master.canvas[1]
+    finally:
+        masterlock.release()
+        if not (int(xinput.get()) > 0 and int(xinput.get()) < canvasx):
+            returnFlag = False
+        if not (int(yinput.get()) > 0 and int(yinput.get()) < canvasy):
+            returnFlag = False
+        return returnFlag

@@ -1,8 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 from navigation import operations
 from functools import partial
 import functools as ft
+
+
+
+def checkNewUser(idinput,xinput,yinput,master,userlock,masterlock):
+        flag = True
+        if not (operations.checkAddUserDataType(idinput,xinput,yinput)):
+            messagebox.showwarning(message="X,Y and ID parameters require integer numbers only", title="Wrong input data")
+            flag = False
+        elif not (operations.checkAddUserUnique(idinput,master,userlock)):
+            messagebox.showwarning(message="New user can't be assigned an already existing ID", title="New user ID duplicity")
+            flag = False
+
+        elif not (operations.checkAddUserBoundaries(xinput,yinput,master,masterlock)):
+            messagebox.showwarning(message="New user X and Y position out of canvas parameters", title="New user out of boundaries")
+            flag = False
+
+        if (flag):
+            operations.addUser(idinput, xinput, yinput, [], 1, master, userlock)
+
 
 
 def threadGUI(master,userlock,poilock,timelock,masterlock):
@@ -36,7 +56,7 @@ def threadGUI(master,userlock,poilock,timelock,masterlock):
     xylabel = tk.Label(newuserframe, text="X and Y position of new user", font=("Arial", 10))
     xentry = tk.Entry(newuserframe, textvariable=xinput, font=('Arial', 10, 'normal'))
     yentry = tk.Entry(newuserframe, textvariable=yinput, font=('Arial', 10, 'normal'))
-    newuserpartial = partial(operations.addUser, idinput, xinput, yinput, [], 1, master,userlock)
+    newuserpartial = partial(checkNewUser, idinput, xinput, yinput,master,userlock,masterlock)
     adduserbutton = tk.Button(newuserframe,text="Add User", command=newuserpartial)
     clearformbutton = tk.Button(newuserframe,text="Clear", command= lambda:operations.removeUser(iddrop,master,userlock))
 
