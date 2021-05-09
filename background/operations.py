@@ -4,7 +4,7 @@ import math
 def powerSwitch(master,masterlock,powerflag):
     masterlock.acquire()
     try:
-        master.power = powerflag
+        master.config.power = powerflag
         print("Turning simulation power to: "+str(master.power))
     finally:
         masterlock.release()
@@ -42,6 +42,15 @@ def addUser(id, xpos, ypos, cache, speed, master, userlock):
     finally:
         userlock.release()
 
+def addPoi(id, xpos, ypos, category, master, poilock):
+    newpoi = objects.Poi(int(id.get()), int(xpos.get()), int(ypos.get()), category)
+    print(newpoi.__dict__)
+    poilock.acquire()
+    try:
+        master.poi_list.append(newpoi)
+    finally:
+        poilock.release()
+
 #TODO in addUser(): Validate x and y within canvas borders, Validate id as a unique value.
 
 def removeUser(id,master,userlock):
@@ -53,11 +62,26 @@ def removeUser(id,master,userlock):
     finally:
         userlock.release()
 
+def toggleGrid(master, masterlock, flag):
+    if flag == 1:
+        toggleflag = True
+    elif flag == 0:
+        toggleflag = False
+    elif flag != 0 and flag != 1:
+        print("Wrong grid parameter.")
+        return
+    masterlock.acquire()
+    try:
+        master.config.showGrid = toggleflag
+    finally:
+        masterlock.release()
+
+
 
 
 #Validations!
 
-def checkAddUserDataType(idinput, xinput, yinput):
+def checkEntryDataType(idinput, xinput, yinput):
     returnFlag = True
     if not (idinput.get().isnumeric()):
         returnFlag = False
@@ -68,7 +92,7 @@ def checkAddUserDataType(idinput, xinput, yinput):
     return returnFlag
 
 
-def checkAddUserUnique(idinput, master, userlock):
+def checkUserUnique(idinput, master, userlock):
     userlock.acquire()
     try:
         returnFlag = True
@@ -79,8 +103,19 @@ def checkAddUserUnique(idinput, master, userlock):
         userlock.release()
         return returnFlag
 
+def checkPoiUnique(idinput, master, poilock):
+    poilock.acquire()
+    try:
+        returnFlag = True
+        for element in master.poi_list:
+            if (int(idinput.get()) == element.id):
+                returnFlag = False
+    finally:
+        poilock.release()
+        return returnFlag
 
-def checkAddUserBoundaries(xinput, yinput, master, masterlock):
+
+def checkBoundariesOnCanvas(xinput, yinput, master, masterlock):
     returnFlag = True
     masterlock.acquire()
     try:
@@ -93,3 +128,9 @@ def checkAddUserBoundaries(xinput, yinput, master, masterlock):
         if not (int(yinput.get()) > 0 and int(yinput.get()) < canvasy):
             returnFlag = False
         return returnFlag
+
+def checkCategorySelected(category):
+    if (category >= 0 and category <= 5):
+        return True
+    else:
+        return False

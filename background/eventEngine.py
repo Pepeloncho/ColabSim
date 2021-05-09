@@ -2,12 +2,19 @@ import time
 import random
 import math
 
+def terminate(master,masterlock):
+        masterlock.acquire()
+        try:
+            master.config.running = False
+        finally:
+            masterlock.release()
+
 def timeLapse(master,userlock,poilock,timelock,masterlock):
-    while (True):
+    while (master.config.running):
         timelock.acquire()
         flag = False
         try:
-           if (master.power == True):
+           if (master.config.power == True):
                time.sleep(0.1)
                timeaux = math.modf(master.timelapse)[1]
                master.timelapse = master.timelapse + 0.1
@@ -15,7 +22,8 @@ def timeLapse(master,userlock,poilock,timelock,masterlock):
                print("Time elapsed ="+ str(master.timelapse))
                if (timeaux != newtime):
                    flag = True
-
+           else:
+               return
 
         finally:
             timelock.release()
