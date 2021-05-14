@@ -25,13 +25,14 @@ class Config:
 
 
 class Master:
-    def __init__(self, log, timelapse, canvas, cuadsize):
+    def __init__(self, canvas, cuadsize):
 
-        self.log = log
-        self.timelapse = timelapse
+        self.log = []
+        self.timelapse = 0
         self.canvas = canvas
         self.cuadsize = cuadsize
         self.poi_list = []
         self.user_list = []
+        self.query_list = []
         self.config = Config()
 

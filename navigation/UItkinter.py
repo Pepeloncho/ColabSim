@@ -57,8 +57,9 @@ def checkNewUser(idinput,xinput,yinput,master,userlock,masterlock):
 
 
 
-def threadGUI(master,userlock,poilock,timelock,masterlock,threadKiller):
+def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller):
 
+    print("Starting Tkinter...")
     selected = master.config.power
     iddrop = 0
     window = tk.Tk()
