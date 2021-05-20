@@ -42,10 +42,13 @@ class UIpygame:
     def drawGrid(self):
             """Function used to draw quadrants delimiting rects on a PyGame screen described on the parameters
              # Parameters: ('Master' structure, PyGame screen)"""
-            for x in range(0, const.WIDTH, self.master.cuadsize):
-                for y in range(0, const.HEIGHT, self.master.cuadsize):
-                    rect = pygame.Rect(x, y, self.master.cuadsize, self.master.cuadsize)
+            for x in range(0, const.WIDTH, self.master.quadsize):
+                for y in range(0, const.HEIGHT, self.master.quadsize):
+                    rect = pygame.Rect(x, y, self.master.quadsize, self.master.quadsize)
                     pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+            for quad in self.master.quadrant_list:
+                self.labelList.append(self.setText(str(quad.id), True, (128, 128, 128)))
+                self.screen.blit(self.labelList[-1], (quad.startingPoint[0]+ 2, quad.startingPoint[1]+1))
 
 
 
@@ -88,6 +91,16 @@ class UIpygame:
             self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (33, 33))
             self.screen.blit(self.iconList[-1], (element.xpos, element.ypos))
 
+    def drawQueries(self,queryList):
+        for element in queryList:
+            rect = pygame.Rect(element[1][0], element[1][1], self.master.quadsize, 0)
+            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+            rect = pygame.Rect(element[1][0] + self.master.quadsize, element[1][1], 0, self.master.quadsize)
+            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+            rect = pygame.Rect(element[1][0], element[1][1] + self.master.quadsize, self.master.quadsize, 0)
+            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+            rect = pygame.Rect(element[1][0], element[1][1], 0, self.master.quadsize)
+            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
 
 
 
@@ -98,13 +111,9 @@ class UIpygame:
         This function is invoked to constantly draw simulation geographical data stored on the master data structure on a newly generated pygame window.
         Parameters: (Master 'structure', User List Lock, POI List Lock, Master Lock)"""
         pygame.init()
-        pygame.mixer.init()
         self.screen = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
         pygame.display.set_caption('Sim screen')
         print("Starting PyGame...")
-
-
-
 
         while True:
 
@@ -138,7 +147,11 @@ class UIpygame:
             finally:
                 self.poilock.release()
 
-
+            self.querylock.acquire()
+            try:
+                queryList = self.master.query_list.copy()
+            finally:
+                self.querylock.release()
 
             self.screen.fill(const.WHITE)
 
@@ -148,6 +161,7 @@ class UIpygame:
                 self.drawGrid()
             self.drawUsers(userList)
             self.drawPOIs(poiList)
+            self.drawQueries(queryList)
 
 
             pygame.display.flip()

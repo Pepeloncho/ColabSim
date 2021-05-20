@@ -34,6 +34,7 @@ class eventEngine:
                         flag = True
             if (flag):
                 self.wakeUserlist()
+                self.cleanQueries()
 
     def getQuery(self):
         return ("query",random.randint(0,5))
@@ -43,37 +44,69 @@ class eventEngine:
 
     def getQueryStartPoint(self,user):
         self.masterlock.acquire()
-        self.userlock.acquire()
         try:
-            query_x = ((user.xpos) - (self.master.cuadsize//2))
-            query_y = ((user.ypos) - (self.master.cuadsize//2))
+            query_x = ((user.xpos) - (self.master.quadsize // 2))
+            query_y = ((user.ypos) - (self.master.quadsize // 2))
         finally:
             self.masterlock.release()
-            self.userlock.release()
             return (query_x,query_y)
 
     def usersOnArea(self, startPoint, ignoreUserList = []):
         usersReturnList = []
-        self.userlock.acquire()
-        try:
-            for element in self.master.user_list:
-                if startPoint[0] <= element.x_pos < startPoint[0] + self.master.cuadsize and startPoint[1] <= element.y_pos < startPoint[1] + self.master.cuadsize:
-                    usersReturnList.append(element)
-            for element in ignoreUserList:
-                usersReturnList.remove(element)
-        finally:
-            self.userlock.release()
-            return usersReturnList
-
-
+        for element in self.master.user_list:
+                if (startPoint[0] <= element.xpos < startPoint[0] + self.master.quadsize):
+                    if (startPoint[1] <= element.ypos < startPoint[1] + self.master.quadsize):
+                        usersReturnList.append(element)
+        for element in ignoreUserList:
+            usersReturnList.remove(element)
+        return usersReturnList
 
 
 
     def performQuery(self, user, category):
-        print("User"+ str(user.id) + " performing a query nearby concerning category  " + str(category))
+        print("User "+ str(user.id) + " performing a query nearby concerning category  " + str(category))
         # Calculating top-left end of the query square
+        queryPoint = self.getQueryStartPoint(user)
+        print("Query starting point stablished at: " + str(queryPoint[0]) + "," + str(queryPoint[1]))
+        usersOnQuery = self.usersOnArea(queryPoint, [user])
+        print("Users involved in query:")
+        usersString = "["
+        for element in usersOnQuery:
+            usersString = usersString + str(element.id)
+            usersString = usersString + ","
+        if len(usersString)>1:
+            usersString = usersString[:-1]
+        usersString = usersString + "]"
+        print(usersString)
 
 
+
+
+        self.timelock.acquire()
+        try:
+            newQuery = (user,queryPoint,usersOnQuery,self.master.timelapse)
+        finally:
+            self.timelock.release()
+
+
+        self.querylock.acquire()
+        try:
+            self.master.query_list.append(newQuery)
+        finally:
+            self.querylock.release()
+
+        return
+
+
+
+    def cleanQueries(self):
+        self.querylock.acquire()
+        try:
+            for query in self.master.query_list:
+                if (self.master.timelapse >= query[3] + 5):
+                    self.master.query_list.remove(query)
+        finally:
+            self.querylock.release()
 
 
 
@@ -123,6 +156,7 @@ class eventEngine:
             return
 
 
+
     def wakeUserlist(self):
         self.userlock.acquire()
         print("Waking all users.")
@@ -138,6 +172,9 @@ class eventEngine:
 
                     self.performStep(element,perform[1])
 
+                if (perform[0] == "query"):
+
+                    self.performQuery(element,perform[1])
         finally:
             self.userlock.release()
 

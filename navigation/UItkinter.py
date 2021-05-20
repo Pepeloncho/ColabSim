@@ -15,17 +15,17 @@ def handleExit(window,threadKiller):
 
 
 
-def checkNewPoi(idinput, xinput, yinput, category, master, poilock, masterlock):
+def checkNewPoi(idinput, xinput, yinput, category, operations):
     flag = True
     if not (operations.checkEntryDataType(idinput, xinput, yinput)):
         messagebox.showwarning(message="X,Y and ID parameters require integer numbers only", title="Wrong input data")
         flag = False
-    elif not (operations.checkPoiUnique(idinput, master, poilock)):
+    elif not (operations.checkPoiUnique(idinput)):
         messagebox.showwarning(message="New POI can't be assigned with an already existing ID",
                                title="New POI ID duplicity")
         flag = False
 
-    elif not (operations.checkBoundariesOnCanvas(xinput, yinput, master, masterlock)):
+    elif not (operations.checkBoundariesOnCanvas(xinput, yinput)):
         messagebox.showwarning(message="New POI X,Y position out of canvas parameters",
                                title="New user out of boundaries")
         flag = False
@@ -35,29 +35,29 @@ def checkNewPoi(idinput, xinput, yinput, category, master, poilock, masterlock):
         flag = False
 
     if (flag):
-        operations.addPoi(idinput, xinput, yinput, category, master, poilock)
+        operations.addPoi(idinput, xinput, yinput, category)
 
 
 
-def checkNewUser(idinput,xinput,yinput,master,userlock,masterlock):
+def checkNewUser(idinput,xinput,yinput,master,userlock,masterlock,operations):
         flag = True
         if not (operations.checkEntryDataType(idinput, xinput, yinput)):
             messagebox.showwarning(message="X,Y and ID parameters require integer numbers only", title="Wrong input data")
             flag = False
-        elif not (operations.checkUserUnique(idinput, master, userlock)):
+        elif not (operations.checkUserUnique(idinput)):
             messagebox.showwarning(message="New user can't be assigned with an already existing ID", title="New user ID duplicity")
             flag = False
 
-        elif not (operations.checkBoundariesOnCanvas(xinput, yinput, master, masterlock)):
+        elif not (operations.checkBoundariesOnCanvas(xinput, yinput)):
             messagebox.showwarning(message="New user X,Y position out of canvas parameters", title="New user out of boundaries")
             flag = False
 
         if (flag):
-            operations.addUser(idinput, xinput, yinput, [], 1, master, userlock)
+            operations.addUser(idinput, xinput, yinput, [], 1)
 
 
 
-def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller):
+def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller,operations):
 
     print("Starting Tkinter...")
     selected = master.config.power
@@ -72,10 +72,10 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     mainframe = ttk.Frame(notebook)
     notebook.add(mainframe, text="Main")
     powerlabel = tk.Label(mainframe, text="Simulation Power Switch", font=("Arial", 12))
-    poweronradius = tk.Radiobutton(mainframe, text='Sim On', value=True, command=lambda: operations.powerSwitch(master, masterlock, True))
-    poweroffradius = tk.Radiobutton(mainframe, text='Sim Off', value=False, command=lambda: operations.powerSwitch(master, masterlock, False))
-    printlogbutton = tk.Button(mainframe, text="Print Log", command=lambda: operations.printLog(master, masterlock))
-    togglegridcheckbox = tk.Checkbutton(mainframe, text="Show grid", variable=showGridFlag, command=lambda: operations.toggleGrid(master, masterlock, showGridFlag.get()))
+    poweronradius = tk.Radiobutton(mainframe, text='Sim On', value=True, command=lambda: operations.powerSwitch(True))
+    poweroffradius = tk.Radiobutton(mainframe, text='Sim Off', value=False, command=lambda: operations.powerSwitch(False))
+    printlogbutton = tk.Button(mainframe, text="Print Log", command=lambda: operations.printLog())
+    togglegridcheckbox = tk.Checkbutton(mainframe, text="Show grid", variable=showGridFlag, command=lambda: operations.toggleGrid(showGridFlag.get()))
     togglegridcheckbox.toggle()
 
     powerlabel.grid(column=0, row=1)
@@ -97,7 +97,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     xylabel = tk.Label(newuserframe, text="X and Y position of new user", font=("Arial", 10))
     xentry = tk.Entry(newuserframe, textvariable=xinput, font=('Arial', 10, 'normal'))
     yentry = tk.Entry(newuserframe, textvariable=yinput, font=('Arial', 10, 'normal'))
-    newuserpartial = partial(checkNewUser, idinput, xinput, yinput,master,userlock,masterlock)
+    newuserpartial = partial(checkNewUser, idinput, xinput, yinput,master,userlock,masterlock,operations)
     adduserbutton = tk.Button(newuserframe,text="Add User", command=newuserpartial)
     clearformbutton = tk.Button(newuserframe, text="Clear", command= lambda: operations.removeUser(iddrop, master, userlock))
 
@@ -123,7 +123,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     categorylabel = tk.Label(newpoiframe, text="Category", font=("Arial", 10))
     categorycombobox =ttk.Combobox(newpoiframe, state="readonly")
     categorycombobox["values"]=["Triangle","5-Star","Diamond","Arrow","4-Star","Heart"]
-    addpoibutton = tk.Button(newpoiframe, text="Add Poi", command=lambda:checkNewPoi(poiidinput,poixinput,poiyinput,categorycombobox.current(),master,poilock,masterlock))
+    addpoibutton = tk.Button(newpoiframe, text="Add Poi", command=lambda:checkNewPoi(poiidinput,poixinput,poiyinput,categorycombobox.current(),operations))
 
     poiidlabel.grid(column=0, row=1)
     poiidentry.grid(column=0, row=2)
