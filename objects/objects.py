@@ -55,8 +55,13 @@ class Master:
                 id += 1
         return QuadrantsReturn
 
-    #def pointOnQuadrant(self):
-        #Cuidado con salirse!
+    def pointOnQuadrant(self, point):
+        checkX = point[0]//self.quadsize + 1
+        checkY = point[1]//self.quadsize + 1
+        broad = self.canvas[0] // self.quadsize
+        returnQuad = checkX + (checkY * broad)
+        print(str("returnQuad"))
+        return returnQuad
 
 
 
