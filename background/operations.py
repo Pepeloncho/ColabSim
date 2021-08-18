@@ -1,5 +1,6 @@
 from objects import objects
 import math
+import random
 class operations:
 
     def __init__(self,master,userlock,poilock,timelock,querylock,masterlock):
@@ -25,12 +26,13 @@ class operations:
         finally:
             self.masterlock.release()
 
-    #TODO entire log tracking and recording of events should be handled on a specialized class.
+
     def printLog(self):
         """ Prints on console all tasks stored on the 'log' attribute of 'master' structure.
         parameters: (Master structure, Master lock)"""
         self.masterlock.acquire()
         try:
+            #TODO use fileHandler object to print master log
             print(str(self.master.log))
         finally:
             self.masterlock.release()
@@ -59,26 +61,40 @@ class operations:
     def addUser(self, id, xpos, ypos, cache, speed):
         """ Inserts into 'master' structure's list of users a newly created user using data extracted from parameters.
         parameters: (User unique id, X position on canvas, Y position on canvas, Currently stored cache, Movement speed, 'Master' structure, User lock"""
-        newuser = objects.User(int(id.get()), int(xpos.get()), int(ypos.get()), cache, speed)
-        print(newuser.__dict__)
+        newuser = objects.User(int(id.get()), int(xpos.get()), int(ypos.get()), cache, speed, self.master)
         self.userlock.acquire()
         try:
-            self.master.user_list.append(newuser)
+
+            self.master.addUser(newuser)
         finally:
             self.userlock.release()
+
+    def randomUser(self):
+        idlist = list()
+        for element in self.master.user_list:
+            idlist.append(element.id)
+        id = 1
+        while id in idlist:
+            id = id + 1
+        x = random.randint(10,self.master.canvas[0])
+        y = random.randint(10,self.master.canvas[1])
+        newuser = objects.User(id,x,y,[],1,self.master)
+        self.userlock.acquire()
+        try:
+            self.master.addUser(newuser)
+        finally:
+            self.userlock.release()
+
 
     def addPoi(self, id, xpos, ypos, category):
         """ Inserts into 'master' structure's list of POIs a newly created POI using data extracted from parameters.
         parameters: (POI unique id, X position on canvas, Y position on canvas, POI semantic category, 'Master' structure, POI lock)"""
         newpoi = objects.Poi(int(id.get()), int(xpos.get()), int(ypos.get()), category)
-        print(newpoi.__dict__)
         self.poilock.acquire()
         try:
             self.master.poi_list.append(newpoi)
         finally:
             self.poilock.release()
-
-    #TODO in addUser(): Validate x and y within canvas borders, Validate id as a unique value.
 
     def removeUser(self, id):
         """ Given an id, this function removes an specific User from the 'master' structure's list of users.

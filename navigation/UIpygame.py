@@ -2,6 +2,7 @@ import pygame
 from constants import constants as const
 
 
+
 # The following document describes return graphics routines for easy abstraction of simulation data. Every routine stated
 # here is SEVERED from the simulation triggered events or the user I/O interface. If you would ever want to change how
 # the simulation handle this output graphics. you can just replace this safely by printing graphic data stored on the main
@@ -149,7 +150,7 @@ class UIpygame:
 
             self.querylock.acquire()
             try:
-                queryList = self.master.query_list.copy()
+                queryList = self.master.querydraw_list.copy()
             finally:
                 self.querylock.release()
 

@@ -4,7 +4,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from background import operations
 from functools import partial
-
+from tkinter.filedialog import asksaveasfile
 
 
 def handleExit(window,threadKiller):
@@ -12,6 +12,17 @@ def handleExit(window,threadKiller):
     #TODO: Session not saved exception and warning.
        window.destroy()
        threadKiller.start()
+
+def populateCombo(combo,master,userlock):
+    usersID = []
+    userlock.acquire()
+    try:
+        for user in master.user_list:
+            usersID.append(str(user.id))
+    finally:
+        userlock.release()
+        combo['values'] = tuple(usersID)
+        return
 
 
 
@@ -69,12 +80,18 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     window.protocol('WM_DELETE_WINDOW', lambda: handleExit(window,threadKiller))
     notebook = ttk.Notebook(window)
     showGridFlag = tk.BooleanVar()
+
+
+    def printLog():
+            nonlocal master
+            master.fileHandler.dumpLog(False)
+
     mainframe = ttk.Frame(notebook)
     notebook.add(mainframe, text="Main")
     powerlabel = tk.Label(mainframe, text="Simulation Power Switch", font=("Arial", 12))
     poweronradius = tk.Radiobutton(mainframe, text='Sim On', value=True, command=lambda: operations.powerSwitch(True))
     poweroffradius = tk.Radiobutton(mainframe, text='Sim Off', value=False, command=lambda: operations.powerSwitch(False))
-    printlogbutton = tk.Button(mainframe, text="Print Log", command=lambda: operations.printLog())
+    printlogbutton = tk.Button(mainframe, text="Print Log", command=lambda: printLog())
     togglegridcheckbox = tk.Checkbutton(mainframe, text="Show grid", variable=showGridFlag, command=lambda: operations.toggleGrid(showGridFlag.get()))
     togglegridcheckbox.toggle()
 
@@ -85,6 +102,83 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     printlogbutton.grid(column=0, row=4)
 
 
+    trackframe= ttk.Frame(notebook)
+    notebook.add(trackframe, text="Track User")
+    combouser = ttk.Combobox(trackframe, state="readonly", postcommand=lambda:populateCombo(combouser,master,userlock))
+    idlabel = tk.Label(trackframe, text="User Id:", font=("Arial", 10))
+    xlabel = tk.Label(trackframe, text="X Position:", font=("Arial", 10))
+    xtext = tk.Label(trackframe, text="--", font=("Arial", 10))
+    ylabel = tk.Label(trackframe, text="Y Position:", font=("Arial", 10))
+    ytext = tk.Label(trackframe, text="--", font=("Arial", 10))
+    retainLabel = tk.Label(trackframe, text="Retained:", font=("Arial",10))
+    retainText = tk.Label(trackframe, text="--", font=("Arial",10))
+    quadlabel = tk.Label(trackframe, text="Quadrant:", font=("Arial", 10))
+    quadtext = tk.Label (trackframe, text="--", font=("Arial", 10))
+    def trackUser(event):
+        userID = int(combouser.get())
+        for element in master.user_list:
+            if element.id == userID:
+                trackedUser = element
+        nonlocal xtext
+        nonlocal ytext
+        nonlocal retainText
+        xtext.config(text = str(trackedUser.xpos))
+        ytext.config(text = str(trackedUser.ypos))
+        quadtext.config(text = str(master.pointOnQuadrant(trackedUser.point())))
+        retainText.config(text =trackedUser.printRetainList())
+
+    def trackUpdate():
+        nonlocal combouser
+        nonlocal window
+        nonlocal userlock
+        trackFlag = False
+        if combouser.get() != "":
+            userlock.acquire()
+            try:
+                for element in master.user_list:
+                    if element.id is int(combouser.get()):
+                       trackFlag = True
+            finally:
+                userlock.release()
+        if trackFlag:
+            userID = int(combouser.get())
+            userlock.acquire()
+            try:
+                for element in master.user_list:
+                    if element.id == userID:
+                        trackedUser = element
+            finally:
+                userlock.release()
+            nonlocal xtext
+            nonlocal ytext
+            xtext.config(text = str(trackedUser.xpos))
+            ytext.config(text = str(trackedUser.ypos))
+            quadtext.config(text=str(master.pointOnQuadrant(trackedUser.point()).id))
+            retainText.config(text=trackedUser.printRetainList())
+        window.after(1000,trackUpdate)
+    window.after(1000, trackUpdate)
+    combouser.bind('<<ComboboxSelected>>', trackUser)
+
+
+    idlabel.grid(column=0, row=0)
+    combouser.grid(column=1, row=0)
+    xlabel.grid(column=0, row=3)
+    xtext.grid(column=1, row=3)
+    ylabel.grid(column=0, row=4)
+    ytext.grid(column=1, row=4)
+    quadlabel.grid(column=0, row=5)
+    quadtext.grid(column=1, row=5)
+    retainLabel.grid(column=0, row=6)
+    retainText.grid(column=1, row=6)
+
+
+
+    #id
+    #xpos
+    #ypos
+    #cache
+    #speed
+    #quadrant
 
 
     newuserframe = ttk.Frame(notebook)
@@ -100,6 +194,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     newuserpartial = partial(checkNewUser, idinput, xinput, yinput,master,userlock,masterlock,operations)
     adduserbutton = tk.Button(newuserframe,text="Add User", command=newuserpartial)
     clearformbutton = tk.Button(newuserframe, text="Clear", command= lambda: operations.removeUser(iddrop, master, userlock))
+    randomuserbutton = tk.Button(newuserframe, text="Clear", command=lambda: operations.randomUser())
 
     idlabel.grid(column=0, row=1)
     identry.grid(column=0, row=2)
@@ -107,7 +202,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     xentry.grid(column=0, row=4)
     yentry.grid(column=1, row=4)
     adduserbutton.grid(column=0, row=5)
-    clearformbutton.grid(column=1, row=5)
+    randomuserbutton.grid(column=1, row=5)
     notebook.grid(column=0, row=0)
 
     newpoiframe = ttk.Frame(notebook)
@@ -135,8 +230,9 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     addpoibutton.grid(column=0, row=7)
 
 
-    notebook.grid(column=0, row=0)
 
 
 
     window.mainloop()
+
+

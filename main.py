@@ -5,6 +5,7 @@ from navigation import UItkinter
 from background import eventEngine
 from background import threadKiller
 from background import operations
+from background import fileHandler
 
 
 if __name__ == '__main__':
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     # Creating an instance of a 'master' class to use as a central data structure of all threads.
     # Check 'objects.py' from 'Objects' package to read it's code.
     # Parameters: Canvas Size (x,y), QuadrantSize (int)
-    master = objects.Master((800,600),100)
+    master = objects.Master((800,600),100,userlock,poilock)
 
     print(master.__dict__)
     print(master.config.__dict__)
@@ -53,6 +54,8 @@ if __name__ == '__main__':
     # Parameters: Master (objects.master), Masterlock (Lock)
     THANATOS = threading.Thread(target=threadKiller.damnation, args=(Atlas, Cronos))
 
+
+
     # Hestia, goddess of hearth and home --> Thread spawned to handle user I/O on a TKinter based user interface.
     # Check 'UItkinter.py' from 'Navigation' package to read this thread's code.
     # Parameters: Master (objects.Master), UserLock (Lock), POILock (Lock), TimeLock (Lock), MasterLock (Lock), threadKiller (Thread)
@@ -60,9 +63,7 @@ if __name__ == '__main__':
 
 
 
-    #Hermes, olympic messenger, god of haste & guide --> Thread spawned to handle file W/R.
-    #Check 'fileHandler.py' from 'Background' package to read this thread's code.
-    #Hermes = threading.Thread(target=)
+
 
 
 
