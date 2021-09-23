@@ -1,6 +1,8 @@
 import time
 import random
 import math
+import threading
+from copy import deepcopy
 from background import fileHandler
 
 class eventEngine:
@@ -11,6 +13,7 @@ class eventEngine:
         self.timelock = timelock
         self.querylock = querylock
         self.masterlock = masterlock
+        self.statCounter = 0
 
 
         print("Event engine instance created.")
@@ -69,14 +72,14 @@ class eventEngine:
 
 
 
-    def performQuery(self, user, category,master):
+    def performQuery(self, user, category):
         print("User "+ str(user.id) + " performing a query nearby concerning category  " + str(category))
         # Calculating top-left end of the query square
         queryPoint = self.getQueryStartPoint(user)
-        print("Query starting point stablished at: " + str(queryPoint[0]) + "," + str(queryPoint[1]))
+        print("Query draw starting point stablished at: " + str(queryPoint[0]) + "," + str(queryPoint[1]))
         self.timelock.acquire()
         try:
-            newQuery = (user, queryPoint, self.master.timelapse)
+            newQuery = (user, user.point(), self.master.timelapse)
             EventList = []
             EventList.append(category)
             self.master.threadAddEvent(self.master.timelapse, "query", EventList, False, user.id)
@@ -87,7 +90,7 @@ class eventEngine:
         self.querylock.acquire()
         try:
             self.master.querydraw_list.append(newQuery)
-            master.newQuery(user, master.timelapse, category, queryPoint)
+            self.master.newQuery(user, self.master.timelapse, category, user.point())
         finally:
             self.querylock.release()
 
@@ -116,13 +119,12 @@ class eventEngine:
                 user.ypos = user.ypos - 10
                 toQuadrant = self.master.pointOnQuadrant(user.point())
                 if fromQuadrant is not toQuadrant:
+                    self.master.stats('migrations')
                     fromQuadrant.user_list.remove(user)
                     toQuadrant.user_list.append(user)
-                    if fromQuadrant.leader is user:
-                        fromQuadrant.leader = None
                     self.master.exploreQuadrant(user)
                 self.master.setQuadrant(user)
-                self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
+                #self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
             else:
                 self.performStep(user,random.randint(1,4))
         if (direction == 2):
@@ -131,16 +133,15 @@ class eventEngine:
                 user.xpos = user.xpos + 10
                 toQuadrant = self.master.pointOnQuadrant(user.point())
                 if fromQuadrant is not toQuadrant:
+                    self.master.stats('migrations')
                     fromQuadrant.user_list.remove(user)
                     toQuadrant.user_list.append(user)
-                    if fromQuadrant.leader is user:
-                        fromQuadrant.leader = None
                     self.master.exploreQuadrant(user)
 
 
 
                 self.master.setQuadrant(user)
-                self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
+                #self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
             else:
                 self.performStep(user,random.randint(1,4))
         if (direction == 3):
@@ -149,15 +150,14 @@ class eventEngine:
                 user.ypos = user.ypos + 10
                 toQuadrant = self.master.pointOnQuadrant(user.point())
                 if fromQuadrant is not toQuadrant:
+                    self.master.stats('migrations')
                     fromQuadrant.user_list.remove(user)
                     toQuadrant.user_list.append(user)
-                    if fromQuadrant.leader is user:
-                        fromQuadrant.leader = None
                     self.master.exploreQuadrant(user)
 
 
                 self.master.setQuadrant(user)
-                self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
+                #self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
             else:
                 self.performStep(user,random.randint(1,4))
         if (direction == 4):
@@ -166,15 +166,14 @@ class eventEngine:
                 user.xpos = user.xpos - 10
                 toQuadrant = self.master.pointOnQuadrant(user.point())
                 if fromQuadrant is not toQuadrant:
+                    self.master.stats('migrations')
                     fromQuadrant.user_list.remove(user)
                     toQuadrant.user_list.append(user)
-                    if fromQuadrant.leader is user:
-                        fromQuadrant.leader = None
                     self.master.exploreQuadrant(user)
 
 
                 self.master.setQuadrant(user)
-                self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
+                #self.master.threadAddEvent(self.master.timelapse, "move", [direction], True, user.id)
             else:
                 self.performStep(user,random.randint(1,4))
 
@@ -195,6 +194,36 @@ class eventEngine:
 
     #TODO WARNING: wakeUserList is taking the lock hostage! Tentative concept: Duplicate user_list to iterate through users without the need of a lock.
     def wakeUserlist(self):
+        self.statCounter = self.statCounter + 1
+        if self.statCounter % 5 == 0:
+            self.userlock.acquire()
+            try:
+                    uniquePoiCount = 0
+                    statTrackMethod = None
+                    time = self.master.timelapse
+                    uniquePoiCount = self.master.getUniqueCache()
+                    cacheCount = self.master.getCacheSize()
+                    userCount = self.master.getUserCount()
+                    poiCount = self.master.getPoiCount()
+                    statTrackMethod = fileHandler.StatsTracker.trackStats
+                    statLock = self.master.logHandler.statLock
+                    if len(self.master.logHandler.tracker.historicStats) == 200:
+                        statLock.acquire()
+                        try:
+                            for line in self.master.logHandler.tracker.statsPrintable:
+                                print(line)
+                            fileHandler.StatsTracker.saveStatisticsToFile()
+                        finally:
+                                statLock.release()
+                    dict = self.master.statDict
+                    statTrackThread = threading.Thread(target=statTrackMethod, args=(time,uniquePoiCount,cacheCount,userCount,poiCount,dict,statLock,)).start()
+
+            finally:
+
+                    self.userlock.release()
+                    self.statCounter = 0
+
+
 
         self.userlock.acquire()
         try:
@@ -209,7 +238,7 @@ class eventEngine:
 
                 if (perform[0] == "query"):
 
-                    self.performQuery(element,perform[1],self.master)
+                    self.performQuery(element,perform[1])
         finally:
             self.userlock.release()
 

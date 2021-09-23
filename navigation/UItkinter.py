@@ -5,7 +5,7 @@ from tkinter import messagebox
 from background import operations
 from functools import partial
 from tkinter.filedialog import asksaveasfile
-
+ 
 
 def handleExit(window,threadKiller):
    if messagebox.askokcancel("Quit", "Do you really want to quit?"):
@@ -194,7 +194,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     newuserpartial = partial(checkNewUser, idinput, xinput, yinput,master,userlock,masterlock,operations)
     adduserbutton = tk.Button(newuserframe,text="Add User", command=newuserpartial)
     clearformbutton = tk.Button(newuserframe, text="Clear", command= lambda: operations.removeUser(iddrop, master, userlock))
-    randomuserbutton = tk.Button(newuserframe, text="Clear", command=lambda: operations.randomUser())
+    randomuserbutton = tk.Button(newuserframe, text="Random User", command=lambda: operations.randomUser())
 
     idlabel.grid(column=0, row=1)
     identry.grid(column=0, row=2)
@@ -219,7 +219,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     categorycombobox =ttk.Combobox(newpoiframe, state="readonly")
     categorycombobox["values"]=["Triangle","5-Star","Diamond","Arrow","4-Star","Heart"]
     addpoibutton = tk.Button(newpoiframe, text="Add Poi", command=lambda:checkNewPoi(poiidinput,poixinput,poiyinput,categorycombobox.current(),operations))
-
+    suggestedpoisbutton = tk.Button(newpoiframe, text="Suggested POIs", command=lambda: operations.suggestedPois())
     poiidlabel.grid(column=0, row=1)
     poiidentry.grid(column=0, row=2)
     poixylabel.grid(column=0, row=3)
@@ -228,6 +228,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     categorylabel.grid(column=0, row=6)
     categorycombobox.grid(column=1, row=6)
     addpoibutton.grid(column=0, row=7)
+    suggestedpoisbutton.grid(column=1, row=7)
 
 
 

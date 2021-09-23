@@ -20,12 +20,14 @@ if __name__ == '__main__':
     # Lock used to protect critical sections that R/W 'master' class. Mostly used to protect 'config' child.
     masterlock = threading.Lock()
 
+    # Instanciating file W/R, statistics tracking and log handler monitor object.
+    hermes = fileHandler.logHandler()
+
+
     # Creating an instance of a 'master' class to use as a central data structure of all threads.
     # Check 'objects.py' from 'Objects' package to read it's code.
     # Parameters: Canvas Size (x,y), QuadrantSize (int)
-    master = objects.Master((800,600),100,userlock,poilock)
-
-    print(master.__dict__)
+    master = objects.Master((800,600),100,userlock,poilock,hermes)
     print(master.config.__dict__)
     # Creating threads and calling procedures:
     # Threads, classes and procedures are named before greek gods accordingly to their functionality.
@@ -53,7 +55,6 @@ if __name__ == '__main__':
     # Check 'threadKiller.py' from 'Background' package to read this thread's code.
     # Parameters: Master (objects.master), Masterlock (Lock)
     THANATOS = threading.Thread(target=threadKiller.damnation, args=(Atlas, Cronos))
-
 
 
     # Hestia, goddess of hearth and home --> Thread spawned to handle user I/O on a TKinter based user interface.

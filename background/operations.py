@@ -76,8 +76,8 @@ class operations:
         id = 1
         while id in idlist:
             id = id + 1
-        x = random.randint(10,self.master.canvas[0])
-        y = random.randint(10,self.master.canvas[1])
+        x = random.randint(10,self.master.canvas[0]-10)
+        y = random.randint(10,self.master.canvas[1]-10)
         newuser = objects.User(id,x,y,[],1,self.master)
         self.userlock.acquire()
         try:
@@ -93,6 +93,44 @@ class operations:
         self.poilock.acquire()
         try:
             self.master.poi_list.append(newpoi)
+        finally:
+            self.poilock.release()
+
+    def suggestedPois(self):
+        if len(self.master.poi_list)>0:
+            print("Can't generate suggested POIs as there are already existent POIs on master structure.")
+            return False
+        for quadrant in self.master.quadrant_list:
+            existingCategories = []
+            suggestedCategories = []
+            while len(suggestedCategories) < 3:
+                if quadrant.poi_list:
+                    for poi in quadrant.poi_list:
+                        if poi.category not in existingCategories:
+                            existingCategories.append(poi.category)
+                category = random.randint(0, 4)
+                while category in existingCategories:
+                    category = random.randint(0, 4)
+                suggestedCategories.append(category)
+            for category in suggestedCategories:
+                self.randomPoi(quadrant,category)
+
+
+    def randomPoi(self,quadrant,category):
+        idlist = list()
+        for poi in self.master.poi_list:
+            idlist.append(poi.id)
+        id = 1
+        while id in idlist:
+            id = id + 1
+        x = random.randint(quadrant.startingPoint[0],quadrant.startingPoint[0]+self.master.quadsize-1)
+        y = random.randint(quadrant.startingPoint[1],quadrant.startingPoint[1]+self.master.quadsize-1)
+
+
+        newpoi = objects.Poi(id,x,y,category)
+        self.poilock.acquire()
+        try:
+            self.master.addPoi(newpoi)
         finally:
             self.poilock.release()
 

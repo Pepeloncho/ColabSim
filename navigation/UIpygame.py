@@ -76,7 +76,7 @@ class UIpygame:
             self.screen.blit(self.labelList[-1],
                         ((element.xpos + 16) - (self.labelList[-1].get_width() // 2), 20 + element.ypos + self.labelList[-1].get_height()))
             self.iconList.append(pygame.image.load('resources/ico/user.png'))
-            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (33, 33))
+            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (9, 9))
             self.screen.blit(self.iconList[-1], (element.xpos, element.ypos))
 
 
@@ -160,8 +160,9 @@ class UIpygame:
 
             if (self.master.config.showGrid):
                 self.drawGrid()
-            self.drawUsers(userList)
+
             self.drawPOIs(poiList)
+            self.drawUsers(userList)
             self.drawQueries(queryList)
 
 
