@@ -79,7 +79,7 @@ class eventEngine:
         print("Query draw starting point stablished at: " + str(queryPoint[0]) + "," + str(queryPoint[1]))
         self.timelock.acquire()
         try:
-            newQuery = (user, user.point(), self.master.timelapse)
+            newQuery = (user, queryPoint, self.master.timelapse)
             EventList = []
             EventList.append(category)
             self.master.threadAddEvent(self.master.timelapse, "query", EventList, False, user.id)
@@ -102,8 +102,27 @@ class eventEngine:
         self.querylock.acquire()
         try:
             for query in self.master.querydraw_list:
-                if (self.master.timelapse >= query[2] + 5):
+                if (self.master.timelapse >= query[2] + 3):
                     self.master.querydraw_list.remove(query)
+            for conn in self.master.conndraw_list:
+                if self.master.timelapse >= conn[2] + 3:
+                    self.master.conndraw_list.remove(conn)
+            for ask in self.master.askdraw_list:
+                if self.master.timelapse >= ask[2] + 3:
+                    self.master.askdraw_list.remove(ask)
+            for resp in self.master.respdraw_list:
+                if self.master.timelapse >= resp[3] + 3:
+                    self.master.respdraw_list.remove(resp)
+            for lbs in self.master.lbsdraw_list:
+                if self.master.timelapse >= lbs[4] + 3:
+                    self.master.lbsdraw_list.remove(lbs)
+            for selfdraw in self.master.selfdraw_list:
+                if self.master.timelapse >= selfdraw[3] + 3:
+                    self.master.selfdraw_list.remove(selfdraw)
+            for cache in self.master.cachedraw_list:
+                if self.master.timelapse >= cache[1] + 3:
+                    self.master.cachedraw_list.remove(cache)
+
         finally:
             self.querylock.release()
 
@@ -200,14 +219,14 @@ class eventEngine:
             try:
                     uniquePoiCount = 0
                     statTrackMethod = None
-                    time = self.master.timelapse
+                    time = int(self.master.timelapse)
                     uniquePoiCount = self.master.getUniqueCache()
                     cacheCount = self.master.getCacheSize()
                     userCount = self.master.getUserCount()
                     poiCount = self.master.getPoiCount()
                     statTrackMethod = fileHandler.StatsTracker.trackStats
                     statLock = self.master.logHandler.statLock
-                    if len(self.master.logHandler.tracker.historicStats) == 200:
+                    if len(self.master.logHandler.tracker.historicStats) == self.master.statLimit:
                         statLock.acquire()
                         try:
                             for line in self.master.logHandler.tracker.statsPrintable:

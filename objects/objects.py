@@ -25,6 +25,13 @@ class User:
         returnString = returnString + "}"
         return returnString
 
+    def printCacheList(self) -> str:
+        returnString = "{"
+        for cache in self.cache:
+            returnString = returnString + str(cache.id) + " "
+        returnString = returnString + "}"
+        return returnString
+
     def point(self):
         return (self.xpos, self.ypos)
 
@@ -44,15 +51,23 @@ class User:
         for user in self.master.user_list:
             if self.userDistance(user) < radius:
                 matchList.append(user)
+                origin = self.point()
+                destiny = user.point()
+                origin = (origin[0] + 15,origin[1] + 15)
+                destiny = (destiny[0] +15, destiny[1] + 15)
+                drawConn = (origin,destiny,self.master.timelapse)
+                self.master.conndraw_list.append(drawConn)
 
         matchList.remove(self)
         return matchList
 
     def storeInCache(self,poi):
+
         self.cache.append(poi)
 
         print("User "+ str(self.id) + "added Poi "+ str(poi.id) + "to it's cache (Buffer size:"+str(len(self.cache))+")")
         if len(self.cache) >= self.master.cachesize:
+            self.master.cachedraw_list.append((self.point(),self.master.timelapse))
             self.master.stats('fullCacheTotal')
             quadrant = self.master.pointOnQuadrant(self.point())
             self.master.stats('leaderSearchTotal')
@@ -81,7 +96,8 @@ class User:
 
             if quadrantDataAvailable  or len(existingFrequencies) > self.master.l:
                 print("Quadrant leader found: User "+ str(self.id)+" is performing informed caching technique")
-
+                self.master.threadAddEvent(self.master.timelapse, "cache",
+                                           ["frequency"], False, self.id)
 
                 for frequency in quadrant.frequencyTable: #This table is sorted in every insertion.
 
@@ -101,6 +117,8 @@ class User:
                             return
             else:
                     print("Quadrant leader not found or frequency list smaller than l: User " + str(self.id) + " is priorizing cache by distance.")
+                    self.master.threadAddEvent(self.master.timelapse, "cache",
+                                               ["distance"], False, self.id)
                     self.master.stats('leaderNotFound')
                     potentialDiscard = self.cache[0]
                     for data in self.cache:
@@ -197,13 +215,28 @@ class Query:
         self.category = category
         self.point = point
         self.master = master
+        self.masked = False
         self.quadrants = self.getQuadrantsOnZone()
         self.user_list = self.usersOnQuery()
         self.quadrant = self.master.pointOnQuadrant(self.point)
         self.response = None
-        self.responseType = None # types include : 'masked','risky','flood','direct'
+        self.responseType = None # types include : 'masked','risky','flood','direct'.'self'
+        self.responder = None
+        self.master.askdraw_list.append((point,category,self.master.timelapse))
         self.resolveQuery()
         self.master.stats('totalQueries')
+
+        if self.response is None:
+            pass
+        else:
+            if self.responder != "LBS Server":
+                self.master.threadAddEvent(self.master.timelapse, "answer", [self.responder.id,self.response.id,self.responseType], False, user.id)
+            else:
+                if self.masked is True:
+                    self.master.threadAddEvent(self.master.timelapse,"lbsanswer",[self.response.id,"masked"],False,user.id)
+                else:
+                    self.master.threadAddEvent(self.master.timelapse, "lbsanswer", [self.response.id, "risky"],False,user.id)
+
 
 
     def usersOnQuery(self):
@@ -221,6 +254,8 @@ class Query:
             self.master.stats('invalidQueries')
             return False
         possibleResponders = self.getPossibleResponders(relevantPois)
+        if self.checkSelfResponse(relevantPois):
+            return True
         if self.checkDirectResponse(possibleResponders,relevantPois): #check if query can be solved within user range
             return True
         elif self.checkFloodResponse(possibleResponders,relevantPois): #check if query can be solved by flooding
@@ -241,9 +276,9 @@ class Query:
 
     def getPoisOnRange(self, point):
         poisOnRange = []
-        quadrantList = self.getQuadrantsOnZone()
-        for quadrant in quadrantList:
-            for poi in quadrant.poi_list:
+        relevanceRadius = 1.5 * math.sqrt(2) * self.master.quadsize
+        for poi in self.master.poi_list:
+            if self.user.distanceTo(poi.point())<relevanceRadius:
                 poisOnRange.append(poi)
         print("Possible Responses to query: "+str(len(poisOnRange)))
         return poisOnRange
@@ -296,6 +331,17 @@ class Query:
                 matchList.append(poi)
         return matchList
 
+    def checkSelfResponse(self,relevantPois: list):
+        for poi in relevantPois:
+            if poi in self.user.cache:
+                print("Relevant poi found within query user's cache.")
+                print("Query responder: " + str(self.user.id))
+                self.responder = self.user
+                self.setResponse = self.setResponse(poi,"self")
+                return True
+        return False
+
+
     def checkDirectResponse(self, possibleResponders, relevantPois):
         directUsers = self.user.broadcastUsers()
         directUsers.append(self.user)
@@ -303,6 +349,7 @@ class Query:
             if user in possibleResponders:
                 print("Query resolved within direct range.")
                 print("Query responder: " + str(user.id))
+                self.responder = user
                 self.setResponse(self.getMatchFromCache(user, relevantPois)[0],"direct")
                 print("Query response: Poi "+ str(self.response.id))
                 self.master.stats('peerResponses')
@@ -318,6 +365,7 @@ class Query:
         if search.returnMatch() is not None:
             print("Query resolved within flood range.")
             print("Query responder: User" +str(search.returnMatch().id))
+            self.responder = search.returnMatch()
             self.setResponse(self.getMatchFromCache(search.returnMatch(),relevantPois)[0],"flood")
             print("Query response: Poi " + str(self.response.id))
             self.master.stats('peerFloodResponses')
@@ -333,6 +381,7 @@ class Query:
         if not semanticMasking and not positionMasking:
             print("User "+str(self.user.id)+" couldn't mask query concerning category "+str(self.category)+" from position " +str(self.point)+" at "+str(self.time)+" seconds.")
             #Store historical data in log
+            self.masked = False
             return False
         else:
             if semanticMasking:
@@ -345,6 +394,7 @@ class Query:
             print("User "+str(self.user.id)+" succesfully masked")
             self.master.stats('maskedQueries')
             #Store historical data in log
+            self.masked = True
             return True
 
 
@@ -422,6 +472,7 @@ class Query:
                 self.master.stats('riskyQueries')
                 #add historical data
             print("Query responder: LBS Server")
+            self.responder = "LBS Server"
             self.response = self.setResponse(tentativeAnswer,responseType)
             print("Query response: Poi " + str(tentativeAnswer.id))
             self.master.stats('serverResponses')
@@ -431,7 +482,15 @@ class Query:
         self.responseType = responseType
         self.master.stats('totalResponses')
         self.master.pointOnQuadrant(response.point()).addFrequency(self.category)
-        self.user.storeInCache(response)
+        if self.responder == "LBS Server":
+            self.master.lbsdraw_list.append((self.point,self.category,self.response.id,self.masked,self.master.timelapse))
+        else:
+            if(self.responder.id == self.user.id):
+                self.master.selfdraw_list.append((self.point,self.category,self.response.id,self.master.timelapse))
+            else:
+                self.master.respdraw_list.append((self.responder.point(),self.category,self.response.id,self.master.timelapse))
+        if response not in self.user.cache:
+            self.user.storeInCache(response)
 
 
 
@@ -449,6 +508,12 @@ class Master:
         self.poi_list = []
         self.user_list = []
         self.querydraw_list = []
+        self.conndraw_list = []
+        self.askdraw_list = []
+        self.respdraw_list = []
+        self.lbsdraw_list = []
+        self.selfdraw_list = []
+        self.cachedraw_list = []
         self.query_list = []
         self.config = Config()
         self.quadrant_list = self.getQuadrants()
@@ -456,9 +521,10 @@ class Master:
         self.userlock = userlock
         self.poilock = poilock
         self.connectionratio = 1
-        self.cachesize = 10
+        self.cachesize = 4
         self.l = 3
-        self.k = 4
+        self.k = 3
+        self.statLimit = 40
         self.logHandler = logHandler
         self.stats = logHandler.tracker.count
         self.statDict = logHandler.tracker.stats
@@ -474,6 +540,7 @@ class Master:
 
         userQuadrant = self.pointOnQuadrant(user.point())
         print("User " + str(user.id) + " is exploring quadrant " + str(userQuadrant.id))
+        self.threadAddEvent(self.timelapse, "explore", [userQuadrant.id], False, user.id)
         if userQuadrant.unexplored == True or userQuadrant.leader == None:
             userQuadrant.unexplored = False
             userQuadrant.leader = user

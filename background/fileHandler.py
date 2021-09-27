@@ -96,16 +96,40 @@ class logEvent:
                 return self._printMovement()
             if self.event == "query":
                 return self._printQuery()
+            if self.event == "explore":
+                return self._printExplore()
+            if self.event == "answer":
+                return self._printAnswer()
+            if self.event == "cache":
+                return self._printCache()
+            if self.event == "lbsanswer":
+                return self._printLBSAnswer()
 
             else:
-                print("User "+ str(self.userID) + 'around second: ' + str(self.timeMark) + ' performed a "' + str(self.event) + '" request with argument: ' + str(self.argument[0]) + ".")
+                print("User "+ str(self.userID) + 'around second: ' + str(int(self.timeMark)) + ' performed a "' + str(self.event) + '" request with argument: ' + str(self.argument[0]) + ".")
 
     def _printMovement(self):
-        returnLog = "User " + str(self.userID) + " moved towards " + self._directionPrint() + " at second " + str(self.timeMark)
+        returnLog = "User " + str(self.userID) + " moved towards " + self._directionPrint() + " at second " + str(int(self.timeMark))
         return returnLog
 
     def _printQuery(self):
-        returnLog = "User " + str(self.userID) + " performed a query at second: " + str(self.timeMark)  + " concerning category " + self._categoryPrint()
+        returnLog = "User " + str(self.userID) + " performed a query at second: " + str(int(self.timeMark))  + " concerning category " + self._categoryPrint()
+        return returnLog
+
+    def _printExplore(self):
+        returnLog = "User " + str(self.userID) + " migrated to quadrant " + str(self.argument[0]) + " at second: " +str(int(self.timeMark))
+        return returnLog
+
+    def _printAnswer(self):
+        returnLog = "User "+ str(self.argument[0]) + " answered user " + str(self.userID) + "query with info about POI "+str(self.argument[1])+ "(via  " +self.argument[2] +") at time: " + str(int(self.timeMark))
+        return returnLog
+
+    def _printCache(self):
+        returnLog = "User "+str(self.userID) + " has reached storage limit and performed a caching priority technique by "+str(self.argument[0])+" at second "+str(int(self.timeMark))
+        return returnLog
+
+    def _printLBSAnswer(self):
+        returnLog = "LBS Server answered user " + str(self.userID) + "query with info about POI "+str(self.argument[0])+ "(" +self.argument[1] +") at time: " + str(int(self.timeMark))
         return returnLog
 
     def _directionPrint(self):

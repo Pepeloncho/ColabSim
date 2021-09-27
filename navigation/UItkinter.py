@@ -63,6 +63,10 @@ def checkNewUser(idinput,xinput,yinput,master,userlock,masterlock,operations):
             messagebox.showwarning(message="New user X,Y position out of canvas parameters", title="New user out of boundaries")
             flag = False
 
+        elif (master.config.power):
+            flag = False
+            messagebox.showwarning(message="Can't add a user instance after simulation start.")
+
         if (flag):
             operations.addUser(idinput, xinput, yinput, [], 1)
 
@@ -114,6 +118,8 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     retainText = tk.Label(trackframe, text="--", font=("Arial",10))
     quadlabel = tk.Label(trackframe, text="Quadrant:", font=("Arial", 10))
     quadtext = tk.Label (trackframe, text="--", font=("Arial", 10))
+    cacheLabel = tk.Label(trackframe, text="Cache:", font=("Arial",10))
+    cacheText = tk.Label(trackframe, text="--", font=("Arial",10))
     def trackUser(event):
         userID = int(combouser.get())
         for element in master.user_list:
@@ -155,6 +161,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
             ytext.config(text = str(trackedUser.ypos))
             quadtext.config(text=str(master.pointOnQuadrant(trackedUser.point()).id))
             retainText.config(text=trackedUser.printRetainList())
+            cacheText.config(text=trackedUser.printCacheList())
         window.after(1000,trackUpdate)
     window.after(1000, trackUpdate)
     combouser.bind('<<ComboboxSelected>>', trackUser)
@@ -170,6 +177,8 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     quadtext.grid(column=1, row=5)
     retainLabel.grid(column=0, row=6)
     retainText.grid(column=1, row=6)
+    cacheLabel.grid(column=0, row=7)
+    cacheText.grid(column=1, row=7)
 
 
 
@@ -217,7 +226,7 @@ def threadGUI(master,userlock,poilock,timelock,querylock,masterlock,threadKiller
     poiyentry = tk.Entry(newpoiframe, textvariable=poiyinput, font=('Arial', 10, 'normal'))
     categorylabel = tk.Label(newpoiframe, text="Category", font=("Arial", 10))
     categorycombobox =ttk.Combobox(newpoiframe, state="readonly")
-    categorycombobox["values"]=["Triangle","5-Star","Diamond","Arrow","4-Star","Heart"]
+    categorycombobox["values"]=["Category 0","Category 1","Category 2","Category 3","Category 4","Category 5"]
     addpoibutton = tk.Button(newpoiframe, text="Add Poi", command=lambda:checkNewPoi(poiidinput,poixinput,poiyinput,categorycombobox.current(),operations))
     suggestedpoisbutton = tk.Button(newpoiframe, text="Suggested POIs", command=lambda: operations.suggestedPois())
     poiidlabel.grid(column=0, row=1)

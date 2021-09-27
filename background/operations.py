@@ -61,59 +61,70 @@ class operations:
     def addUser(self, id, xpos, ypos, cache, speed):
         """ Inserts into 'master' structure's list of users a newly created user using data extracted from parameters.
         parameters: (User unique id, X position on canvas, Y position on canvas, Currently stored cache, Movement speed, 'Master' structure, User lock"""
-        newuser = objects.User(int(id.get()), int(xpos.get()), int(ypos.get()), cache, speed, self.master)
-        self.userlock.acquire()
-        try:
+        if not (self.master.config.power):
+            newuser = objects.User(int(id.get()), int(xpos.get()), int(ypos.get()), cache, speed, self.master)
+            self.userlock.acquire()
+            try:
 
-            self.master.addUser(newuser)
-        finally:
-            self.userlock.release()
-
+                self.master.addUser(newuser)
+            finally:
+                self.userlock.release()
+        else:
+            print("Can't add User instance while simulation is running")
     def randomUser(self):
-        idlist = list()
-        for element in self.master.user_list:
-            idlist.append(element.id)
-        id = 1
-        while id in idlist:
-            id = id + 1
-        x = random.randint(10,self.master.canvas[0]-10)
-        y = random.randint(10,self.master.canvas[1]-10)
-        newuser = objects.User(id,x,y,[],1,self.master)
-        self.userlock.acquire()
-        try:
-            self.master.addUser(newuser)
-        finally:
-            self.userlock.release()
+        if not (self.master.config.power):
+            idlist = list()
+            for element in self.master.user_list:
+                idlist.append(element.id)
+            id = 1
+            while id in idlist:
+                id = id + 1
+            x = random.randint(10,self.master.canvas[0]-10)
+            y = random.randint(10,self.master.canvas[1]-10)
+            newuser = objects.User(id,x,y,[],1,self.master)
+            self.userlock.acquire()
+            try:
+                self.master.addUser(newuser)
+            finally:
+                self.userlock.release()
+        else:
+            print("Can't add User instance while simulation is running")
 
 
     def addPoi(self, id, xpos, ypos, category):
         """ Inserts into 'master' structure's list of POIs a newly created POI using data extracted from parameters.
         parameters: (POI unique id, X position on canvas, Y position on canvas, POI semantic category, 'Master' structure, POI lock)"""
-        newpoi = objects.Poi(int(id.get()), int(xpos.get()), int(ypos.get()), category)
-        self.poilock.acquire()
-        try:
-            self.master.poi_list.append(newpoi)
-        finally:
-            self.poilock.release()
+        if not (self.master.config.power):
+            newpoi = objects.Poi(int(id.get()), int(xpos.get()), int(ypos.get()), category)
+            self.poilock.acquire()
+            try:
+                self.master.poi_list.append(newpoi)
+            finally:
+                self.poilock.release()
+        else:
+            print("Can't add POI instance while simulation is running")
 
     def suggestedPois(self):
-        if len(self.master.poi_list)>0:
-            print("Can't generate suggested POIs as there are already existent POIs on master structure.")
-            return False
-        for quadrant in self.master.quadrant_list:
-            existingCategories = []
-            suggestedCategories = []
-            while len(suggestedCategories) < 3:
-                if quadrant.poi_list:
-                    for poi in quadrant.poi_list:
-                        if poi.category not in existingCategories:
-                            existingCategories.append(poi.category)
-                category = random.randint(0, 4)
-                while category in existingCategories:
-                    category = random.randint(0, 4)
-                suggestedCategories.append(category)
-            for category in suggestedCategories:
-                self.randomPoi(quadrant,category)
+        if not (self.master.config.power):
+            if len(self.master.poi_list)>0:
+                print("Can't generate suggested POIs as there are already existent POIs on master structure.")
+                return False
+            for quadrant in self.master.quadrant_list:
+                existingCategories = []
+                suggestedCategories = []
+                while len(suggestedCategories) < 3:
+                    if quadrant.poi_list:
+                        for poi in quadrant.poi_list:
+                            if poi.category not in existingCategories:
+                                existingCategories.append(poi.category)
+                    category = random.randint(0, 5)
+                    while category in existingCategories:
+                        category = random.randint(0, 5)
+                    suggestedCategories.append(category)
+                for category in suggestedCategories:
+                    self.randomPoi(quadrant,category)
+        else:
+            print("Can't add POI instance while simulation is running")
 
 
     def randomPoi(self,quadrant,category):

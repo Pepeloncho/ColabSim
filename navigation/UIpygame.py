@@ -29,11 +29,19 @@ class UIpygame:
 
 
 
-    def setText(self, text, antialias, color):
+    def setText(self, text, antialias, color, background = const.WHITE):
         """ Function to generate a font resource to draw into and return a drawable object to render directly on the screen.
             Parameters: (String to print, Antialias boolean flag, RGB Color of the text)"""
-        font = pygame.font.Font("resources/font/m5x7.ttf", 14)
-        return font.render(text, antialias, color, const.WHITE)
+
+        return self.font.render(text, antialias, color, background)
+
+
+
+    def setDrawText(self, text, antialias, color, background = const.WHITE):
+        """ Function to generate a font resource to draw into and return a drawable object to render directly on the screen.
+            Parameters: (String to print, Antialias boolean flag, RGB Color of the text)"""
+
+        return self.drawfont.render(text, antialias, color, background)
 
 
 
@@ -46,7 +54,7 @@ class UIpygame:
             for x in range(0, const.WIDTH, self.master.quadsize):
                 for y in range(0, const.HEIGHT, self.master.quadsize):
                     rect = pygame.Rect(x, y, self.master.quadsize, self.master.quadsize)
-                    pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+                    pygame.draw.rect(self.screen, (128,128,128), rect, 1)
             for quad in self.master.quadrant_list:
                 self.labelList.append(self.setText(str(quad.id), True, (128, 128, 128)))
                 self.screen.blit(self.labelList[-1], (quad.startingPoint[0]+ 2, quad.startingPoint[1]+1))
@@ -74,9 +82,9 @@ class UIpygame:
         for element in userList:
             self.labelList.append(self.setText("User " + str(element.id), True, (0, 0, 0)))
             self.screen.blit(self.labelList[-1],
-                        ((element.xpos + 16) - (self.labelList[-1].get_width() // 2), 20 + element.ypos + self.labelList[-1].get_height()))
+                        ((element.xpos + 16) - (self.labelList[-1].get_width() // 2), 10 + element.ypos + self.labelList[-1].get_height()))
             self.iconList.append(pygame.image.load('resources/ico/user.png'))
-            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (9, 9))
+            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (30, 30))
             self.screen.blit(self.iconList[-1], (element.xpos, element.ypos))
 
 
@@ -86,23 +94,62 @@ class UIpygame:
     def drawPOIs(self,poiList):
         for element in poiList:
             self.labelList.append(self.setText("POI " + str(element.id), True, (0, 0, 0)))
-            self.screen.blit(self.labelList[-1], (
-                (element.xpos + 16) - (self.labelList[-1].get_width() // 2), 22 + element.ypos + self.labelList[-1].get_height()))
+            self.screen.blit(self.labelList[-1], ((element.xpos) - (self.labelList[-1].get_width() // 2), element.ypos + self.labelList[-1].get_height()-10))
             self.iconList.append(pygame.image.load('resources/ico/cat' + str(element.category) + '.png'))
-            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (33, 33))
-            self.screen.blit(self.iconList[-1], (element.xpos, element.ypos))
+            self.iconList[-1] = pygame.transform.scale(self.iconList[-1], (10, 10))
+            self.screen.blit(self.iconList[-1], (element.xpos-5, element.ypos-5))
 
-    def drawQueries(self,queryList):
-        for element in queryList:
-            rect = pygame.Rect(element[1][0], element[1][1], self.master.quadsize, 0)
-            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
-            rect = pygame.Rect(element[1][0] + self.master.quadsize, element[1][1], 0, self.master.quadsize)
-            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
-            rect = pygame.Rect(element[1][0], element[1][1] + self.master.quadsize, self.master.quadsize, 0)
-            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
-            rect = pygame.Rect(element[1][0], element[1][1], 0, self.master.quadsize)
-            pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+    def drawQueries(self,queryList,connList,askList,respList,lbsList,selfList,cacheList):
+        #for element in queryList:
+        #    rect = pygame.Rect(element[1][0], element[1][1], self.master.quadsize, 0)
+        #    pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+        #    rect = pygame.Rect(element[1][0] + self.master.quadsize, element[1][1], 0, self.master.quadsize)
+        #    pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+        #    rect = pygame.Rect(element[1][0], element[1][1] + self.master.quadsize, self.master.quadsize, 0)
+        #    pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+        #    rect = pygame.Rect(element[1][0], element[1][1], 0, self.master.quadsize)
+        #    pygame.draw.rect(self.screen, const.BLACK, rect, 1)
+        for element in connList:
+            pygame.draw.line(self.screen, const.BLACK, element[0], element[1], 1)
+        for element in askList:
+            self.labelList.append(self.setDrawText("LBQ? ", True, const.CATEGORIES[element[1]],const.EVENTBOX))
+            self.screen.blit(self.labelList[-1], ((element[0][0]) - (self.labelList[-1].get_width() // 2),
 
+                                                  element[0][1] + self.labelList[-1].get_height() - 10))
+
+
+
+        for element in respList:
+            self.labelList.append(self.setDrawText("POI: "+str(+element[2])+"!!", True, const.CATEGORIES[element[1]],const.EVENTBOX))
+            self.screen.blit(self.labelList[-1], ((element[0][0]) - (self.labelList[-1].get_width() // 2),
+
+                                                  element[0][1] + self.labelList[-1].get_height() - 25))
+
+        for element in lbsList:
+            masking = ""
+            if element[3] == True:
+                masking = "Masked"
+            else:
+                masking = "Risky"
+            self.labelList.append(self.setDrawText("LBS RESP: POI "+str(+element[2])+" "+masking+"!!", True, const.CATEGORIES[element[1]],const.EVENTBOX))
+            self.screen.blit(self.labelList[-1], ((element[0][0]) - (self.labelList[-1].get_width() // 2),
+
+                                                  element[0][1] + self.labelList[-1].get_height() - 25))
+        for element in selfList:
+                self.labelList.append(
+                    self.setDrawText("SELF RESP: POI " + str(+element[2]) + "!!", True, const.CATEGORIES[element[1]],
+                                     const.EVENTBOX))
+                self.screen.blit(self.labelList[-1], ((element[0][0]) - (self.labelList[-1].get_width() // 2),
+
+                                                      element[0][1] + self.labelList[-1].get_height() - 25))
+
+        for element in cacheList:
+                self.labelList.append(
+                    self.setDrawText("MAX CACHE", True, (169,169,169),
+                                     const.EVENTBOX))
+                self.screen.blit(self.labelList[-1], ((element[0][0]) - (self.labelList[-1].get_width() // 2),
+
+                                                      element[0][1] + self.labelList[-1].get_height() + 18))
 
 
 
@@ -113,10 +160,13 @@ class UIpygame:
         Parameters: (Master 'structure', User List Lock, POI List Lock, Master Lock)"""
         pygame.init()
         self.screen = pygame.display.set_mode((const.WIDTH, const.HEIGHT))
+        self.font = pygame.font.Font("resources/font/m5x7.ttf", 14)
+        self.drawfont = pygame.font.SysFont('Arial', 12, bold=True)
         pygame.display.set_caption('Sim screen')
         print("Starting PyGame...")
 
         while True:
+
 
 
             for event in pygame.event.get():
@@ -151,6 +201,12 @@ class UIpygame:
             self.querylock.acquire()
             try:
                 queryList = self.master.querydraw_list.copy()
+                connList = self.master.conndraw_list.copy()
+                askList = self.master.askdraw_list.copy()
+                respList = self.master.respdraw_list.copy()
+                lbsList = self.master.lbsdraw_list.copy()
+                selfList = self.master.selfdraw_list.copy()
+                cacheList = self.master.cachedraw_list.copy()
             finally:
                 self.querylock.release()
 
@@ -163,7 +219,7 @@ class UIpygame:
 
             self.drawPOIs(poiList)
             self.drawUsers(userList)
-            self.drawQueries(queryList)
+            self.drawQueries(queryList,connList,askList,respList,lbsList,selfList,cacheList)
 
 
             pygame.display.flip()
