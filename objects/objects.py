@@ -87,8 +87,6 @@ class User:
 
             self.cache.sort(key=sortCriteria,
                             reverse=True)  # Sort cache by distance from data to user in descendent order
-            for cache in self.cache:
-                print(self.distanceTo(cache.point()))
             existingFrequencies = []
 
             for frequency in quadrant.frequencyTable:
